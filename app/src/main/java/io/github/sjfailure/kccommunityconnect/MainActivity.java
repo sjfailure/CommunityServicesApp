@@ -102,7 +102,13 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (JSONException e) {
             Log.e("MainActivity", "Failed to parse JSON and create event days.", e);
-        }
+            
+        } finally (
+            if (service_data !== null){
+            return;
+        } else {
+            wait(1000);
+            populateCalendar();
     }
 
 
