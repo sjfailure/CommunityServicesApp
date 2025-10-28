@@ -6,6 +6,10 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
+    <string name="menu_category_label">Category</string>
+    <string name="menu_audience_label">Target Audience</string>
+    <string name="select_a_date">Select a date</string>
+    <string name="select_an_event">Select an event for more details</string>
 
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
