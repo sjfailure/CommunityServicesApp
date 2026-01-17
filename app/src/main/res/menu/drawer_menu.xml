@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="@string/menu_category_label" >
+        <menu >
+            <item android:title="Food" />
+            <item android:title="Health" />
+            <item android:title="General" />
+            <item android:title="Shelter" />
+            <item android:title="Hygiene" />
+        </menu>
+    </item>
+    <item android:title="@string/menu_audience_label" >
+        <menu >
+            <item android:title="Everyone" />
+            <item android:title="Children and Teens" />
+            <item android:title="Justice-Involved and Returning Citizens" />
+            <item android:title="Military Service Members and Veterans" />
+            <item android:title="Unhoused or Experiencing Homelessness" />
+        </menu>
+    </item>
+</menu>
