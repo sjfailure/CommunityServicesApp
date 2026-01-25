@@ -4,7 +4,7 @@ KC Connect is a native Android application designed to bridge the gap between Ka
 
 ## ⚙️ Tech Stack
 * **Language:** Java
-* **Networking:** Retrofit 2 / GSON (REST API Consumption)
+* **Networking:** Retrofit 2 (REST API Consumption)
 * **Architecture:** Moving toward a Repository Pattern to ensure Separation of Concerns.
 * **UI:** XML-based layouts utilizing RecyclerView for efficient data rendering.
 
