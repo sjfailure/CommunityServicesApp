@@ -2,9 +2,13 @@ package io.github.sjfailure.kccommunityconnect;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.Group;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,6 +28,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +36,12 @@ public class MainActivity extends AppCompatActivity {
     private CalendarView calendarView;
     private RecyclerView eventRecyclerView;
     private EventAdapter eventAdapter;
+    
+    // UI State Views
+    private ProgressBar loadingProgressBar;
+    private Group contentGroup;
+    private View errorLayout;
+    private Button retryButton;
 
     private final String TAG = "MainActivity";
 
@@ -39,71 +50,75 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize all views
         calendarView = findViewById(R.id.calendarView);
         eventRecyclerView = findViewById(R.id.eventRecyclerView);
+        loadingProgressBar = findViewById(R.id.loadingProgressBar);
+        contentGroup = findViewById(R.id.contentGroup);
+        errorLayout = findViewById(R.id.errorLayout);
+        retryButton = findViewById(R.id.retryButton);
 
         // --- Setup RecyclerView ---
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        eventRecyclerView.setLayoutManager(layoutManager);
-        eventAdapter = new EventAdapter(new ArrayList<>()); // Start with an empty list
-        eventRecyclerView.setAdapter(eventAdapter);
+        setupRecyclerView();
 
-        // Add dividers between RecyclerView items
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(eventRecyclerView.getContext(),
-                layoutManager.getOrientation());
-        eventRecyclerView.addItemDecoration(dividerItemDecoration);
+        // --- Setup Listeners ---
+        retryButton.setOnClickListener(v -> startDataFetch());
+        calendarView.setOnCalendarDayClickListener(this::handleCalendarDayClick);
+        
+        // Initial data fetch
+        startDataFetch();
+    }
 
-        Calendar calendar = Calendar.getInstance();
-        calendarView.setMinimumDate(calendar);
-
-        try {
-            calendarView.setDate(calendar);
-        } catch (OutOfDateRangeException e) {
-            throw new RuntimeException(e);
-        }
-
-        calendarView.setOnCalendarDayClickListener(calendarDay -> {
-            // Normalize today's date to midnight for an accurate comparison
-            Calendar today = Calendar.getInstance();
-            today.set(Calendar.HOUR_OF_DAY, 0);
-            today.set(Calendar.MINUTE, 0);
-            today.set(Calendar.SECOND, 0);
-            today.set(Calendar.MILLISECOND, 0);
-
-            // Proceed only if the selected date is not in the past
-            if (!calendarDay.getCalendar().before(today)) {
-                populateRecyclerView(calendarDay);
-            }
-        });
-
+    private void startDataFetch() {
+        showLoading();
         FetchData fetchData = new FetchData();
         fetchData.fetch(new FetchData.OnDataReadyCallback() {
             @Override
             public void onDataReady(JSONObject data) {
                 service_data = data;
-                populateCalendar();
+                setupCalendar();
+                populateCalendarDecorators();
+                showContent();
             }
 
             @Override
             public void onFailure(Exception e) {
-                Log.e("MainActivity", "Failed to fetch data", e);
-                Toast.makeText(MainActivity.this, "Failed to fetch data", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Failed to fetch data", e);
+                showError();
             }
         });
     }
+    
+    private void setupRecyclerView() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        eventRecyclerView.setLayoutManager(layoutManager);
+        eventAdapter = new EventAdapter(new ArrayList<>());
+        eventRecyclerView.setAdapter(eventAdapter);
+        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(eventRecyclerView.getContext(),
+                layoutManager.getOrientation());
+        eventRecyclerView.addItemDecoration(dividerItemDecoration);
+    }
+    
+    private void setupCalendar() {
+        Calendar today = Calendar.getInstance();
+        calendarView.setMinimumDate(today);
+        try {
+            calendarView.setDate(today);
+        } catch (OutOfDateRangeException e) {
+            Log.e(TAG, "Error setting calendar date", e);
+        }
+    }
 
-    private void populateCalendar() {
+    private void populateCalendarDecorators() {
         if (service_data == null) {
-            Log.e("MainActivity", "populateCalendar called but service_data is null.");
+            Log.e(TAG, "populateCalendar called but service_data is null.");
             return;
         }
-
         try {
             ArrayList<CalendarDay> eventDays = createEventDaysFromJSON(service_data);
-            Log.d("MainActivity", "Populating calendar with " + eventDays.size() + " event days.");
             calendarView.setCalendarDays(eventDays);
         } catch (JSONException e) {
-            Log.e("MainActivity", "Failed to parse JSON and create event days.", e);
+            Log.e(TAG, "Failed to parse JSON and create event days.", e);
         }
     }
 
@@ -115,34 +130,41 @@ public class MainActivity extends AppCompatActivity {
         Iterator<String> keys = services.keys();
         while (keys.hasNext()) {
             String key = keys.next();
-            JSONObject service = services.getJSONObject(key);
-
             try {
+                JSONObject service = services.getJSONObject(key);
                 String startTimeStr = service.getString("start_time");
                 Date eventDate = sdf.parse(startTimeStr);
                 Calendar eventCalendar = Calendar.getInstance();
                 eventCalendar.setTime(eventDate);
-
                 CalendarDay calendarDay = new CalendarDay(eventCalendar);
                 calendarDay.setImageResource(R.mipmap.ic_dot);
                 eventDays.add(calendarDay);
-
-            } catch (ParseException e) {
-                Log.w("MainActivity", "Skipping service with unparseable date. Key: " + key, e);
-            } catch (JSONException e) {
-                Log.w("MainActivity", "Skipping service with missing 'start_time'. Key: " + key, e);
+            } catch (ParseException | JSONException e) {
+                Log.w(TAG, "Skipping service with malformed data. Key: " + key, e);
             }
         }
-
-        Log.d("MainActivity", "Finished creating event days. Total: " + eventDays.size());
         return eventDays;
+    }
+    
+    private void handleCalendarDayClick(CalendarDay calendarDay) {
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+
+        if (!calendarDay.getCalendar().before(today)) {
+            populateRecyclerView(calendarDay);
+        }
     }
 
     private void populateRecyclerView(CalendarDay date) {
+        if (service_data == null) return;
         List<ServiceEvent> eventsForDay = new ArrayList<>();
-        Log.d(TAG, "populateRecyclerView: starting to populate for date: " + date.getCalendar().getTime().toString());
         Calendar searchCal = date.getCalendar();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss",
+                Locale.getDefault());
 
         try {
             JSONObject services = service_data.getJSONObject("services");
@@ -151,7 +173,6 @@ public class MainActivity extends AppCompatActivity {
                 String serviceKey = keys.next();
                 JSONObject service = services.getJSONObject(serviceKey);
                 Date match_date = sdf.parse(service.getString("start_time"));
-
                 Calendar matchCal = Calendar.getInstance();
                 matchCal.setTime(match_date);
 
@@ -163,35 +184,66 @@ public class MainActivity extends AppCompatActivity {
                     String service_category = service.getString("service_category");
                     String service_type = service.getString("service_type");
                     String start_time = convert24To12(service.getString("start_time"));
-
-                    eventsForDay.add(new ServiceEvent(provider, service_category, service_type, start_time));
+                    eventsForDay.add(
+                            new ServiceEvent(
+                                    serviceKey,
+                                    provider,
+                                    service_category,
+                                    service_type,
+                                    start_time
+                            )
+                    );
                 }
             }
         } catch (JSONException | ParseException e) {
             Log.e(TAG, "Error parsing services for display", e);
-            Toast.makeText(this, "Error loading event details.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                    this,
+                    "Error loading event details.",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
 
         eventAdapter.updateEvents(eventsForDay);
-        Log.d(TAG, "populateRecyclerView: Adapter updated with " + eventsForDay.size() + " events.");
-
-        // Optionally, show a message if no events are found
         if(eventsForDay.isEmpty()) {
-            Toast.makeText(this, "No events scheduled for this day.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                    this,
+                    "No events scheduled for this day.",
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
     private String convert24To12(String time24) {
         try {
-            SimpleDateFormat sdf24 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            SimpleDateFormat sdf12 = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+            SimpleDateFormat sdf24 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            sdf24.setTimeZone(TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat sdf12 = new SimpleDateFormat("hh:mm a", Locale.US);
             Date date = sdf24.parse(time24);
+            if (date == null) {
+                return "";
+            }
             return sdf12.format(date);
         } catch (ParseException e) {
-            Log.e(TAG, "Error converting time format", e);
-            // Return the original time part if parsing fails
             return time24.substring(11, 16);
         }
+    }
+    
+    // --- UI State Management Methods ---
+    private void showLoading() {
+        contentGroup.setVisibility(View.GONE);
+        errorLayout.setVisibility(View.GONE);
+        loadingProgressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void showContent() {
+        loadingProgressBar.setVisibility(View.GONE);
+        errorLayout.setVisibility(View.GONE);
+        contentGroup.setVisibility(View.VISIBLE);
+    }
+
+    private void showError() {
+        loadingProgressBar.setVisibility(View.GONE);
+        contentGroup.setVisibility(View.GONE);
+        errorLayout.setVisibility(View.VISIBLE);
     }
 }

@@ -21,6 +21,13 @@
             app:layout_constraintTop_toTopOf="parent"
             app:title="@string/app_name" />
 
+        <!-- Content Group -->
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/contentGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="serviceText,divider,eventRecyclerView,calendarView,selectionBar" />
+
         <TextView
             android:id="@+id/serviceText"
             android:layout_width="match_parent"
@@ -79,6 +86,46 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Target Audience" />
+        </LinearLayout>
+
+        <!-- Loading State -->
+        <ProgressBar
+            android:id="@+id/loadingProgressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Error State -->
+        <LinearLayout
+            android:id="@+id/errorLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/errorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Failed to load data"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/retryButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Retry" />
+
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

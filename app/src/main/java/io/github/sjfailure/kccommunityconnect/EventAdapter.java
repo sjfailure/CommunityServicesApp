@@ -1,17 +1,23 @@
 package io.github.sjfailure.kccommunityconnect;
 
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
-    // TODO implement intent to open detail view activity
     private List<ServiceEvent> eventList;
+
+    private final String TAG = "EventAdapter";
+
 
     public EventAdapter(List<ServiceEvent> eventList) {
         this.eventList = eventList;
@@ -44,7 +50,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         notifyDataSetChanged(); // This tells the adapter to refresh the list
     }
 
-    static class EventViewHolder extends RecyclerView.ViewHolder {
+    class EventViewHolder extends RecyclerView.ViewHolder {
         TextView providerName, serviceCategory, serviceType, startTime;
 
         public EventViewHolder(@NonNull View itemView) {
@@ -53,6 +59,32 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             serviceCategory = itemView.findViewById(R.id.serviceCategory);
             serviceType = itemView.findViewById(R.id.serviceType);
             startTime = itemView.findViewById(R.id.startTime);
+            itemView.setOnClickListener(v -> {
+
+                System.out.println("Item clicked at position: ");
+
+                int position = getAdapterPosition();
+
+
+                // Make sure the position is valid
+                if (position != RecyclerView.NO_POSITION) {
+                    ServiceEvent clickedEvent = eventList.get(position);
+                    String eventId = clickedEvent.getId();
+
+
+                    Log.d(TAG, "Item clicked at position: " + eventId);
+
+                    // Create the intent to start DetailViewActivity
+                    Intent intent = new Intent(v.getContext(), DetailViewActivity.class);
+                    // Pass the event ID to the new activity
+                    intent.putExtra("EVENT_ID", eventId);
+//                    Toast.makeText(v.getContext(),
+//                            "Intent created",
+//                            Toast.LENGTH_LONG).show();
+//                    // Start the new activity
+                    v.getContext().startActivity(intent);
+                }
+            });
         }
     }
 }

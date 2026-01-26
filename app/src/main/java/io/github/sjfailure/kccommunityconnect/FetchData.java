@@ -49,4 +49,35 @@ public class FetchData {
             }
         });
     }
+
+    public void detailFetch(OnDataReadyCallback callback, String eventId) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://10.0.2.2:8000/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ApiService service = retrofit.create(ApiService.class);
+        Call<ResponseBody> call = service.getEventDetails(eventId);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    try {
+                        String jsonData = response.body().string();
+                        JSONObject jobj = new JSONObject(jsonData);
+                        callback.onDataReady(jobj);
+                    } catch (IOException | JSONException | InterruptedException e) {
+                        callback.onFailure(e);
+                    }
+                } else {
+                    callback.onFailure(new Exception("API call failed with response code: " + response.code()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                callback.onFailure(new Exception(t));
+            }
+        });
+    }
 }
