@@ -135,7 +135,12 @@ public class MainActivity extends AppCompatActivity {
                 String startTimeStr = service.getString("start_time");
                 Date eventDate = sdf.parse(startTimeStr);
                 Calendar eventCalendar = Calendar.getInstance();
+                if (eventDate == null) {
+                    Log.w(TAG, "Skipping service with malformed data. Key: " + key);
+                    continue;
+                }
                 eventCalendar.setTime(eventDate);
+
                 CalendarDay calendarDay = new CalendarDay(eventCalendar);
                 calendarDay.setImageResource(R.mipmap.ic_dot);
                 eventDays.add(calendarDay);
@@ -174,6 +179,10 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject service = services.getJSONObject(serviceKey);
                 Date match_date = sdf.parse(service.getString("start_time"));
                 Calendar matchCal = Calendar.getInstance();
+                if (match_date == null) {
+                    Log.w(TAG, "Skipping service with malformed data. Key: " + serviceKey);
+                    continue;
+                }
                 matchCal.setTime(match_date);
 
                 if (searchCal.get(Calendar.YEAR) == matchCal.get(Calendar.YEAR) &&
