@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -61,27 +60,18 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             startTime = itemView.findViewById(R.id.startTime);
             itemView.setOnClickListener(v -> {
 
-                System.out.println("Item clicked at position: ");
-
                 int position = getAdapterPosition();
-
 
                 // Make sure the position is valid
                 if (position != RecyclerView.NO_POSITION) {
                     ServiceEvent clickedEvent = eventList.get(position);
-                    String eventId = clickedEvent.getId();
-
-
-                    Log.d(TAG, "Item clicked at position: " + eventId);
+                    Log.d(TAG, "Item clicked: " + clickedEvent.getProviderName());
 
                     // Create the intent to start DetailViewActivity
                     Intent intent = new Intent(v.getContext(), DetailViewActivity.class);
-                    // Pass the event ID to the new activity
-                    intent.putExtra("EVENT_ID", eventId);
-//                    Toast.makeText(v.getContext(),
-//                            "Intent created",
-//                            Toast.LENGTH_LONG).show();
-//                    // Start the new activity
+                    // Pass the full ServiceEvent object to the new activity
+                    intent.putExtra("SERVICE_EVENT", clickedEvent);
+                    // Start the new activity
                     v.getContext().startActivity(intent);
                 }
             });

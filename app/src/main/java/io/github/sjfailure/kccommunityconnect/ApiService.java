@@ -9,6 +9,6 @@ public interface ApiService {
     @GET("/api")
     Call<ResponseBody> getData();
 
-    @GET("/api/{id}")
-    Call<ResponseBody> getEventDetails(@Path("id") String eventId);
+//    @GET("/api/{id}")
+//    Call<ResponseBody> getEventDetails(@Path("id") String eventId);
 }
