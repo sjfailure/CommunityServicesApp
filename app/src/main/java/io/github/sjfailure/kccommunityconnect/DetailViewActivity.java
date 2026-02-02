@@ -47,52 +47,29 @@ public class DetailViewActivity extends AppCompatActivity {
             }
         };
 
-        String eventId = getIntent().getStringExtra("EVENT_ID");
-        if (eventId == null || eventId.isEmpty()) {
-            Log.e(TAG, "No Event ID provided. Finishing activity.");
+        Bundle eventBundle = getIntent().getExtras();
+        if (eventBundle == null) {
+            Log.e(TAG, "No event bundle provided. Finishing activity.");
+            finish();
+            return;
+        }
+        ServiceEvent event = eventBundle.getParcelable("SERVICE_EVENT");
+        if (event == null) {
+            Log.e(TAG, "No ServiceEvent provided in the bundle. Finishing activity.");
             finish();
             return;
         }
 
-        FetchData fetchData = new FetchData();
-        fetchData.detailFetch(new FetchData.OnDataReadyCallback() {
-            @Override
-            public void onDataReady(JSONObject data) {
-                Log.d(TAG, "onDataReady called with data: " + data);
-                if (data == null) {
-                    Log.e(TAG, "Received null data from detailFetch.");
-                    Toast.makeText(DetailViewActivity.this, "Error: Could not load event details.", Toast.LENGTH_LONG).show();
-                    return;
-                }
-                try {
-                    event_detail_data = data.getJSONObject("event_data");
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-                try {
-                    setTextOrHide.test(providerName, event_detail_data.getString("provider"));
-                    setTextOrHide.test(address, event_detail_data.getString("address"));
-                    setTextOrHide.test(phone, event_detail_data.getString("phone"));
-                    setTextOrHide.test(email, event_detail_data.getString("email_address"));
-                    setTextOrHide.test(serviceType, event_detail_data.getString("type") + " - " + event_detail_data.getString("category"));
-                    Utilities utilities = new Utilities();
-                    setTextOrHide.test(dateTime, utilities.formatDateTimeRange(event_detail_data.getString("start"), event_detail_data.getString("end")));
-                    setTextOrHide.test(audience, event_detail_data.getString("audience"));
-                    setTextOrHide.test(notes, event_detail_data.getString("note"));
-                } catch (JSONException e) {
-                    Log.e(TAG, "Error parsing event details from JSON", e);
-                    Toast.makeText(DetailViewActivity.this, "Error loading event details.", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    // This is the crucial part. It will catch any other exceptions, like NullPointerException.
-                    Log.e(TAG, "An unexpected error occurred while populating UI", e);
-                    Toast.makeText(DetailViewActivity.this, "An unexpected error occurred.", Toast.LENGTH_SHORT).show();
-                }
-            }
+        setTextOrHide.test(providerName, event.getProviderName());
+        setTextOrHide.test(address, event.getAddress());
+        setTextOrHide.test(phone, event.getPhone());
+        setTextOrHide.test(email, event.getEmail());
+        setTextOrHide.test(serviceType, event.getServiceType() + " - " + event.getServiceCategory());
 
-            @Override
-            public void onFailure(Exception e) {
-                Log.e(TAG, "Failed to fetch event details", e);
-            }
-        }, eventId);
+        setTextOrHide.test(dateTime, event.getMonthDayYear() + " - " + event.getStartTime() + " - " + event.getEndTime());
+        setTextOrHide.test(audience, event.getAudience());
+        setTextOrHide.test(notes, event.getNotes());
+
+
     }
 }
