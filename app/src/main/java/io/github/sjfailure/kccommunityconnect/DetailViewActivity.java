@@ -13,6 +13,13 @@ import org.json.JSONObject;
 
 import java.util.function.BiPredicate;
 
+// TODO Add Phone Number Intent
+// TODO Add Email Intent
+// TODO Add Map Intent
+// TODO Add Scheduling Intent
+
+
+
 public class DetailViewActivity extends AppCompatActivity {
 
     private final String TAG = "DetailViewActivity";
