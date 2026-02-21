@@ -53,3 +53,5 @@ dependencies {
     implementation(libs.recyclerview.v120)
     implementation("com.applandeo:material-calendar-view:1.9.2")
 }
+
+// TODO update Gradle with environment variable switch solution

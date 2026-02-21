@@ -3,24 +3,52 @@ package io.github.sjfailure.kccommunityconnect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServiceEventTest {
 
+    private List<String> foodCategory;
+    private List<String> dinnerType;
+    private List<String> everyoneAudience;
+    private List<String> familyAudience;
+    private List<String> shelterCategory;
+    private List<String> overnightType;
+    
+    @Before
+    public void setUp() {
+        List<String> foodCategory = new ArrayList<String>();
+        foodCategory.add("Food");
+        List<String> dinnerType = new ArrayList<String>();
+        dinnerType.add("Dinner");
+        List<String> everyoneAudience = new ArrayList<String>();
+        everyoneAudience.add("Everyone");
+        List<String> familyAudience = new ArrayList<String>();
+        familyAudience.add("Families");
+        List<String> shelterCategory = new ArrayList<String>();
+        shelterCategory.add("Shelter");
+        List<String> overnightType = new ArrayList<String>();
+        overnightType.add("Overnight");
+    }
     // Test the "happy path" - does the constructor work with valid data?
     @Test
     public void constructor_withValidData_parsesCorrectly() {
+        
+
         ServiceEvent event = new ServiceEvent(
                 "123",
                 "Test Provider",
-                "Food",
-                "Dinner",
+                foodCategory,
+                dinnerType,
                 "2024-05-15 22:30:00", // 10:30 PM UTC
                 "2024-05-16 01:00:00", // 1:00 AM UTC
                 "123 Main St",
                 "555-1234",
                 "test@example.com",
-                "Everyone",
+                everyoneAudience,
                 "Some notes"
         );
 
@@ -40,14 +68,14 @@ public class ServiceEventTest {
         ServiceEvent event = new ServiceEvent(
                 "4",
                 "Test Provider",
-                "Food",
-                "Dinner",
+                foodCategory,
+                dinnerType,
                 "2024-05-15 22:30:00",
                 "2024-05-16 01:00:00",
                 "123 Main St",
                 "555-1234",
                 "test@example.com",
-                "Everyone",
+                everyoneAudience,
                 null
         );
 
@@ -66,14 +94,14 @@ public class ServiceEventTest {
         ServiceEvent event = new ServiceEvent(
                 "5",
                 "Test Provider",
-                "Food",
-                "Dinner",
+                foodCategory,
+                dinnerType,
                 "2024-05-15 22:30:00",
                 "2024-05-16 01:00:00",
                 "123 Main St",
                 null,
                 "test@example.com",
-                "Everyone",
+                everyoneAudience,
                 "Some notes"
         );
 
@@ -92,14 +120,14 @@ public class ServiceEventTest {
         ServiceEvent event = new ServiceEvent(
                 "4953",
                 "Test Provider",
-                "Food",
-                "Dinner",
+                foodCategory,
+                dinnerType,
                 "2026-03-21 12:30:00",
                 "2026-03-21 13:30:00",
                 null,
                 "555-1010",
                 "test@example.com",
-                "Everyone",
+                everyoneAudience,
                 "Some notes"
         );
 
@@ -118,14 +146,14 @@ public class ServiceEventTest {
         ServiceEvent event = new ServiceEvent(
                 "456",
                 "Another Provider",
-                "Shelter",
-                "Overnight",
+                shelterCategory,
+                overnightType,
                 "not-a-real-date", // Invalid data
                 "also-not-a-date",
                 "456 Oak Ave",
                 "555-5678",
                 "another@example.com",
-                "Families",
+                familyAudience,
                 "More notes"
         );
 

@@ -31,6 +31,8 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<ServiceEvent> serviceData;
+    private JSONObject category_type_and_audience_data;
+
     private CalendarView calendarView;
     private RecyclerView eventRecyclerView;
     private EventAdapter eventAdapter;
@@ -73,6 +75,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDataReady(JSONObject data) {
                 serviceData = parseAllEvents(data.optJSONObject("services"));
+                category_type_and_audience_data = prepareCategoryTypeAndAudienceData(data);
+                // Pass the global data to the adapter after it's fetched
+                if (eventAdapter != null) {
+                    eventAdapter.setCategoryTypeAndAudienceData(category_type_and_audience_data);
+                }
                 setupCalendar();
                 populateCalendarDecorators();
                 showContent();
@@ -98,14 +105,17 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject serviceEventData = dataFromApi.getJSONObject(key);
                 events.add(new ServiceEvent(key,
                         serviceEventData.getString("provider_name"),
-                        serviceEventData.getString("service_category"),
-                        serviceEventData.getString("service_type"),
+                        Utilities.convertJSONArraytoStringList(
+                                serviceEventData.getJSONArray("service_category")),
+                        Utilities.convertJSONArraytoStringList(
+                                serviceEventData.getJSONArray("service_type")),
                         serviceEventData.getString("start_time"),
                         serviceEventData.getString("end_time"),
                         serviceEventData.getString("address"),
                         serviceEventData.getString("phone"),
                         serviceEventData.getString("email"),
-                        serviceEventData.getString("audience"),
+                        Utilities.convertJSONArraytoStringList(
+                                serviceEventData.getJSONArray("audience")),
                         serviceEventData.getString("notes")));
             } catch (JSONException e) {
                 Log.e(TAG, "Failed to parse JSON for key: " + key, e);
@@ -193,6 +203,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private JSONObject prepareCategoryTypeAndAudienceData(JSONObject api_data) {
+        JSONObject data = new JSONObject();
+        try {
+            // Assuming the API returns these keys at the top level, or nested within 'data'
+            // Adjust keys like 'audiences' and 'categories/types' based on your actual API response structure
+            if (api_data.has("audiences")) {
+                data.put("audiences", api_data.getJSONArray("audiences"));
+            }
+            if (api_data.has("categories/types")) {
+                data.put("categories/types", api_data.getJSONObject("categories/types"));
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error preparing category/type/audience data", e);
+            // Return an empty object or handle more gracefully if this data is critical
+        }
+        return data;
+    }
+
     // --- UI State Management Methods ---
     private void showLoading() {
         contentGroup.setVisibility(View.GONE);
@@ -211,4 +239,5 @@ public class MainActivity extends AppCompatActivity {
         contentGroup.setVisibility(View.GONE);
         errorLayout.setVisibility(View.VISIBLE);
     }
+
 }

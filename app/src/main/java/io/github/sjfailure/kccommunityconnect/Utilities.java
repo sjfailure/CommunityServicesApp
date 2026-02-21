@@ -4,10 +4,15 @@ import android.util.Log;
 
 import com.applandeo.materialcalendarview.CalendarDay;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -39,5 +44,26 @@ public class Utilities {
         }
     }
 
+    public static List<String> convertJSONArraytoStringList(JSONArray jsonArray) {
+        List<String> stringList = new ArrayList<>();
+        for (int i = 0; i < jsonArray.length(); i++) {
+            try {
+                stringList.add(jsonArray.getString(i));
+            } catch (JSONException e) {
+                Log.e(TAG, "Error converting JSON array to string list", e);
+            }
+        }
+        return stringList;
+    }
 
+    public static String convertListToStringForDisplay(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String item : list) {
+            sb.append(item).append(", ");
+        }
+        return sb.substring(0, sb.length() - 2); // Remove the trailing comma and space
+    }
 }

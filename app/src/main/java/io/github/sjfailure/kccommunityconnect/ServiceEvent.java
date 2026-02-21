@@ -4,18 +4,25 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class ServiceEvent implements Parcelable {
 
     private final String TAG = "ServiceEvent";
     private final String id;
     private final String providerName;
-    private final String serviceCategory;
-    private final String serviceType;
+    private final List<String> serviceCategory;
+    private final List<String> serviceType;
     private String startTime;
     private String endTime;
     private String date;
@@ -24,11 +31,16 @@ public class ServiceEvent implements Parcelable {
     private final String address;
     private final String phone;
     private final String email;
-    private final String audience;
+    private final List<String> audience;
     private final String notes;
 
+
     @Deprecated
-    public ServiceEvent(String id, String providerName, String serviceCategory, String serviceType, String startTime) {
+    public ServiceEvent(String id,
+                        String providerName,
+                        List<String> serviceCategory,
+                        List<String> serviceType,
+                        String startTime) {
         this.id = id;
         this.providerName = providerName;
         this.serviceCategory = serviceCategory;
@@ -47,14 +59,14 @@ public class ServiceEvent implements Parcelable {
 
     public ServiceEvent(String id,
                         String providerName,
-                        String serviceCategory,
-                        String serviceType,
+                        List<String> serviceCategory,
+                        List<String> serviceType,
                         String startInformation,
                         String endInformation,
                         String address,
                         String phone,
                         String email,
-                        String audience,
+                        List<String> audience,
                         String notes) {
         this.id = id;
         this.providerName = providerName;
@@ -96,7 +108,7 @@ public class ServiceEvent implements Parcelable {
             }
 
         } catch (ParseException e) {
-//            Log.e(TAG, "Failed to parse date string", e);
+            // Log.e(TAG, "Failed to parse date string", e);
             // Set to empty strings on failure to prevent crashes
             this.startTime = "";
             this.endTime = "";
@@ -108,8 +120,8 @@ public class ServiceEvent implements Parcelable {
     protected ServiceEvent(Parcel in) {
         id = in.readString();
         providerName = in.readString();
-        serviceCategory = in.readString();
-        serviceType = in.readString();
+        serviceCategory = in.createStringArrayList();
+        serviceType = in.createStringArrayList();
         startTime = in.readString();
         endTime = in.readString();
         date = in.readString();
@@ -118,7 +130,7 @@ public class ServiceEvent implements Parcelable {
         address = in.readString();
         phone = in.readString();
         email = in.readString();
-        audience = in.readString();
+        audience = in.createStringArrayList();
         notes = in.readString();
     }
 
@@ -142,11 +154,11 @@ public class ServiceEvent implements Parcelable {
         return providerName;
     }
 
-    public String getServiceCategory() {
+    public List<String> getServiceCategory() {
         return serviceCategory;
     }
 
-    public String getServiceType() {
+    public List<String> getServiceType() {
         return serviceType;
     }
 
@@ -178,7 +190,7 @@ public class ServiceEvent implements Parcelable {
         return email;
     }
 
-    public String getAudience() {
+    public List<String> getAudience() {
         return audience;
     }
 
@@ -199,8 +211,8 @@ public class ServiceEvent implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(id);
         dest.writeString(providerName);
-        dest.writeString(serviceCategory);
-        dest.writeString(serviceType);
+        dest.writeStringList(serviceCategory);
+        dest.writeStringList(serviceType);
         dest.writeString(startTime);
         dest.writeString(endTime);
         dest.writeString(date);
@@ -209,7 +221,79 @@ public class ServiceEvent implements Parcelable {
         dest.writeString(address);
         dest.writeString(phone);
         dest.writeString(email);
-        dest.writeString(audience);
+        dest.writeStringList(audience);
         dest.writeString(notes);
+    }
+
+    /**
+     * Groups service categories and types into a formatted string using a provided hierarchy.
+     * Example: "Food: Breakfast, Lunch\nHousing: Shelter"
+     *
+     * @param hierarchy A JSONObject representing the category/type hierarchy (e.g., from category_type_and_audience_data).
+     *                  Expected format: {"Category1": {"TypeA": true, "TypeB": true}, "Category2": {"TypeC": true}}
+     * @return A formatted string of categories and their associated types for this service event.
+     */
+    public String groupCategoriesAndTypes(JSONObject hierarchy) {
+        if (hierarchy == null) {
+            Log.e(TAG, "groupCategoriesAndTypes: hierarchy is null.");
+            throw new NullPointerException();
+        }
+        Log.d(TAG, "groupCategoriesAndTypes: start of method, hierarchy intact?: " + hierarchy.getClass().toString());
+        StringBuilder sb = new StringBuilder();
+
+        if (serviceCategory == null || serviceCategory.isEmpty() || hierarchy == null) {
+            Log.d(TAG, "groupCategoriesAndTypes: serviceCategory or hierarchy is null.");
+            return "";
+        }
+
+        Log.d(TAG, "groupCategoriesAndTypes: attempting to build string");
+        try {
+            for (String category : serviceCategory) {
+                // Check if this event's category exists in the hierarchy
+                Log.d(TAG, "groupCategoriesAndTypes: checking category: " + category);
+                if (hierarchy.getJSONObject("categories/types").has(category)) {
+                    Log.d(TAG, "groupCategoriesAndTypes: category is present: " + category);
+                    JSONArray typesInHierarchyForCategory = hierarchy.getJSONObject("categories/types").getJSONArray(category);
+                    List<String> typesInHierarchyForCategoryList = new ArrayList<>();
+                    for (int i = 0; i < typesInHierarchyForCategory.length(); i++) {
+                        typesInHierarchyForCategoryList.add(typesInHierarchyForCategory.getString(i));
+                    }
+                    Log.d(TAG, "groupCategoriesAndTypes: typesInHierarchyForCategory: " + typesInHierarchyForCategory);
+                    List<String> matchingTypes = new ArrayList<>();
+
+                    // Find types for *this event* that also exist under *this category* in
+                    // the hierarchy
+                    for (String type : serviceType) {
+                        Log.d(TAG, "groupCategoriesAndTypes: checking type: " + type);
+                        if (typesInHierarchyForCategoryList.contains(type)) {
+                            Log.d(TAG, "groupCategoriesAndTypes: type is present: " + type);
+                            matchingTypes.add(type);
+                        }
+                    }
+
+                    // Append to StringBuilder if matches are found
+                    if (!matchingTypes.isEmpty()) {
+                        sb.append(category).append(": ")
+                                .append(String.join(", ", matchingTypes))
+                                .append("\n");
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error processing category/type hierarchy: ", e);
+            return "Error grouping services.";
+        }
+
+        // Remove the last newline character if present
+        if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '\n') {
+            sb.setLength(sb.length() - 1);
+        }
+
+        String result = sb.toString();
+        return result.isEmpty() ? "" : result;
+    }
+
+    public String getAudienceAsString() {
+        return audience == null ? "" : String.join(", ", audience);
     }
 }

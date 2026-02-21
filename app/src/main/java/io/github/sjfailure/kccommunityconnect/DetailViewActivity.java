@@ -54,6 +54,17 @@ public class DetailViewActivity extends AppCompatActivity {
             return;
         }
         ServiceEvent event = eventBundle.getParcelable("SERVICE_EVENT");
+        String hierarchyBundleString = eventBundle.getString("CATEGORY_TYPE_AND_AUDIENCE_DATA");
+
+        JSONObject categoryTypeHierarchy;
+        try {
+            categoryTypeHierarchy = new JSONObject(hierarchyBundleString);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing category/type hierarchy JSON: ", e);
+            throw new RuntimeException(e);
+        }
+        Log.d(TAG, "onCreate: ca");
+
         if (event == null) {
             Log.e(TAG, "No ServiceEvent provided in the bundle. Finishing activity.");
             finish();
@@ -64,10 +75,13 @@ public class DetailViewActivity extends AppCompatActivity {
         setTextOrHide.test(address, event.getAddress());
         setTextOrHide.test(phone, event.getPhone());
         setTextOrHide.test(email, event.getEmail());
-        setTextOrHide.test(serviceType, event.getServiceType() + " - " + event.getServiceCategory());
+
+        Log.d(TAG, "onCreate: attempting ServiceEvent.groupCategories...() call, categoryTypeHierarchy is null:" + (categoryTypeHierarchy == null));
+        Log.d(TAG, "onCreate: data dump: " + categoryTypeHierarchy.toString());
+        setTextOrHide.test(serviceType, event.groupCategoriesAndTypes(categoryTypeHierarchy));
 
         setTextOrHide.test(dateTime, event.getMonthDayYear() + " - " + event.getStartTime() + " - " + event.getEndTime());
-        setTextOrHide.test(audience, event.getAudience());
+        setTextOrHide.test(audience, event.getAudienceAsString());
         setTextOrHide.test(notes, event.getNotes());
 
 

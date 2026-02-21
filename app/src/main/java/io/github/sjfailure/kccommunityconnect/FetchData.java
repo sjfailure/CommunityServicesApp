@@ -19,6 +19,7 @@ public class FetchData {
         void onFailure(Exception e);
     }
 
+    // TODO update fetch() to use Gradle build config variables
     public void fetch(OnDataReadyCallback callback) {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://10.0.2.2:8000/")

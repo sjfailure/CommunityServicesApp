@@ -1,6 +1,7 @@
 package io.github.sjfailure.kccommunityconnect;
 
 import android.content.Intent;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,11 +10,15 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.json.JSONObject;
+
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     private List<ServiceEvent> eventList;
+    private JSONObject category_type_and_audience_data;
 
     private final String TAG = "EventAdapter";
 
@@ -34,8 +39,10 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         ServiceEvent currentEvent = eventList.get(position);
         holder.providerName.setText(currentEvent.getProviderName());
-        holder.serviceCategory.setText("Category: " + currentEvent.getServiceCategory());
-        holder.serviceType.setText("Service: " + currentEvent.getServiceType());
+        holder.serviceCategory.setText("Category: " +
+                Utilities.convertListToStringForDisplay(currentEvent.getServiceCategory()));
+        holder.serviceType.setText("Service: " +
+                Utilities.convertListToStringForDisplay(currentEvent.getServiceType()));
         holder.startTime.setText("Time: " + currentEvent.getStartTime());
     }
 
@@ -71,10 +78,18 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                     Intent intent = new Intent(v.getContext(), DetailViewActivity.class);
                     // Pass the full ServiceEvent object to the new activity
                     intent.putExtra("SERVICE_EVENT", clickedEvent);
+                    intent.putExtra(
+                            "CATEGORY_TYPE_AND_AUDIENCE_DATA",
+                            category_type_and_audience_data.toString()
+                    );
                     // Start the new activity
                     v.getContext().startActivity(intent);
                 }
             });
         }
+    }
+
+    public void setCategoryTypeAndAudienceData(JSONObject data) {
+        this.category_type_and_audience_data = data;
     }
 }
