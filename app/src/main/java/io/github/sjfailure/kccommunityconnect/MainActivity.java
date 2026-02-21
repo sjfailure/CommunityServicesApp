@@ -28,6 +28,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+// TODO Add Room Database for persistence
+// TODO Add Service Category Selector and logic
+// TODO add Audience Selector and logic
+// TODO Add Alerts button and functionality
+
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<ServiceEvent> serviceData;
