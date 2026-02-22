@@ -32,5 +32,12 @@
             android:parentActivityName=".MainActivity" />
     </application>
 
+    <queries>
+        <!-- Intent to handle viewing a location on a map -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
 
 </manifest>
