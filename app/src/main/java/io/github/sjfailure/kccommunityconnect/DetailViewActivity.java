@@ -1,5 +1,7 @@
 package io.github.sjfailure.kccommunityconnect;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -15,15 +17,11 @@ import java.util.function.BiPredicate;
 
 // TODO Add Phone Number Intent
 // TODO Add Email Intent
-// TODO Add Map Intent
 // TODO Add Scheduling Intent
-
-
 
 public class DetailViewActivity extends AppCompatActivity {
 
     private final String TAG = "DetailViewActivity";
-    private JSONObject event_detail_data;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,11 +64,11 @@ public class DetailViewActivity extends AppCompatActivity {
         JSONObject categoryTypeHierarchy;
         try {
             categoryTypeHierarchy = new JSONObject(hierarchyBundleString);
-        } catch (JSONException e) {
+        } catch (JSONException | NullPointerException e) {
             Log.e(TAG, "Error parsing category/type hierarchy JSON: ", e);
-            throw new RuntimeException(e);
+            // Set to empty object on failure to prevent crashes later
+            categoryTypeHierarchy = new JSONObject();
         }
-        Log.d(TAG, "onCreate: ca");
 
         if (event == null) {
             Log.e(TAG, "No ServiceEvent provided in the bundle. Finishing activity.");
@@ -79,18 +77,25 @@ public class DetailViewActivity extends AppCompatActivity {
         }
 
         setTextOrHide.test(providerName, event.getProviderName());
-        setTextOrHide.test(address, event.getAddress());
+
+        final String eventAddress = event.getAddress();
+        if (setTextOrHide.test(address, eventAddress)) {
+            address.setOnClickListener(v -> {
+                Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(eventAddress));
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(mapIntent);
+                } else {
+                    Toast.makeText(this, "No map application found.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
         setTextOrHide.test(phone, event.getPhone());
         setTextOrHide.test(email, event.getEmail());
-
-        Log.d(TAG, "onCreate: attempting ServiceEvent.groupCategories...() call, categoryTypeHierarchy is null:" + (categoryTypeHierarchy == null));
-        Log.d(TAG, "onCreate: data dump: " + categoryTypeHierarchy.toString());
         setTextOrHide.test(serviceType, event.groupCategoriesAndTypes(categoryTypeHierarchy));
-
         setTextOrHide.test(dateTime, event.getMonthDayYear() + " - " + event.getStartTime() + " - " + event.getEndTime());
         setTextOrHide.test(audience, event.getAudienceAsString());
         setTextOrHide.test(notes, event.getNotes());
-
-
     }
 }
