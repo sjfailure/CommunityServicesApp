@@ -1,12 +1,13 @@
 package io.github.sjfailure.kccommunityconnect;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -15,9 +16,8 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class FetchData {
+public class FetchProviderData {
 
-    private final String TAG = "FetchData";
     private static Retrofit retrofit = null;
 
     public interface OnDataReadyCallback {
@@ -50,8 +50,7 @@ public class FetchData {
 
     public void fetch(OnDataReadyCallback callback) {
         // Use the singleton instance
-        ApiService service = getRetrofitInstance().create(ApiService.class);
-        Log.d(TAG, "Fetching data from " + BuildConfig.API_BASE_URL);
+        ApiProvider service = getRetrofitInstance().create(ApiProvider.class);
         Call<ResponseBody> call = service.getData();
 
         call.enqueue(new Callback<ResponseBody>() {
