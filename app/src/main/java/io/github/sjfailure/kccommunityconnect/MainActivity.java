@@ -228,7 +228,12 @@ public class MainActivity extends AppCompatActivity {
         
         // Update button text to show active filters
         serviceSearchButton.setText(selectedType != null ? selectedType : (selectedCategory != null ? selectedCategory : "Services"));
-        audienceSearchButton.setText(selectedAudience != null ? selectedAudience : "Target Audience");
+        if (selectedAudience != null && selectedAudience.length() > "Target Audience".length() + 3) {
+            String truncatedAudience = selectedAudience.substring(0, "Target Audience".length()) + "...";
+            audienceSearchButton.setText(truncatedAudience);
+        } else {
+            audienceSearchButton.setText(selectedAudience != null ? selectedAudience : "Target Audience");
+        }
     }
 
     private void startDataFetch() {
