@@ -2,8 +2,27 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
+      <SelectionState runConfigName="apprender">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2026-02-23T01:19:21.967307400Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Mos\.android\avd\Medium_Phone_2.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
+      </SelectionState>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2026-04-11T03:30:00.387185900Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Mos\.android\avd\Medium_Phone.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
       </SelectionState>
     </selectionStates>
   </component>

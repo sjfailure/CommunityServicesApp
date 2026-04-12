@@ -1,11 +1,10 @@
 package io.github.sjfailure.kccommunityconnect;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
@@ -17,7 +16,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class FetchData {
 
-    private final String TAG = "FetchData";
     private static Retrofit retrofit = null;
 
     public interface OnDataReadyCallback {
@@ -25,23 +23,22 @@ public class FetchData {
         void onFailure(Exception e);
     }
 
-    /**
-     * Singleton accessor for Retrofit.
-     * Configures a custom OkHttpClient with 30-second timeouts.
-     */
+    public interface OnFeedbackSentCallback {
+        void onSuccess();
+        void onFailure(Exception e);
+    }
+
     private static Retrofit getRetrofitInstance() {
         if (retrofit == null) {
-            // 1. Create the OkHttpClient with custom timeouts
             OkHttpClient okHttpClient = new OkHttpClient.Builder()
                     .connectTimeout(30, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
                     .writeTimeout(30, TimeUnit.SECONDS)
                     .build();
 
-            // 2. Build Retrofit using that client
             retrofit = new Retrofit.Builder()
                     .baseUrl(BuildConfig.API_BASE_URL)
-                    .client(okHttpClient) // Use the custom client
+                    .client(okHttpClient)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
@@ -49,9 +46,7 @@ public class FetchData {
     }
 
     public void fetch(OnDataReadyCallback callback) {
-        // Use the singleton instance
         ApiService service = getRetrofitInstance().create(ApiService.class);
-        Log.d(TAG, "Fetching data from " + BuildConfig.API_BASE_URL);
         Call<ResponseBody> call = service.getData();
 
         call.enqueue(new Callback<ResponseBody>() {
@@ -67,6 +62,27 @@ public class FetchData {
                     }
                 } else {
                     callback.onFailure(new Exception("API error: " + response.code()));
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
+                callback.onFailure(new Exception(t));
+            }
+        });
+    }
+
+    public void sendFeedback(Map<String, String> feedbackData, OnFeedbackSentCallback callback) {
+        ApiService service = getRetrofitInstance().create(ApiService.class);
+        Call<ResponseBody> call = service.sendFeedback(feedbackData);
+
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess();
+                } else {
+                    callback.onFailure(new Exception("Feedback submission failed: " + response.code()));
                 }
             }
 

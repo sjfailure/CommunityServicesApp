@@ -4,15 +4,20 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.Group;
 import androidx.core.view.GravityCompat;
@@ -37,9 +42,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     // Filter State
     private String selectedCategory = null; 
     private String selectedType = null;
-    private String selectedAudience = null; 
+    private String selectedAudience = null;
     private CalendarDay selectedCalendarDay = null;
 
     private JSONObject category_type_and_audience_data;
@@ -71,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private MaterialToolbar toolbar;
+    private String feedbackKey;
 
     private final String TAG = "MainActivity";
 
@@ -123,14 +131,107 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, ProviderContactList.class));
                 drawerLayout.closeDrawer(GravityCompat.END);
             } else if (id == R.id.nav_report_bug) {
-                String url = "https://docs.google.com/forms/d/e/1FAIpQLScNlgILqI_SuFqaZqEbBI3Lwq8x5Pywq88mKY8NO_ivPe4-Ew/viewform?usp=pp_url&entry.2106881136=" + BuildConfig.VERSION_NAME + "&entry.2127431450=" + Build.MODEL;
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                showFeedbackDialog();
                 drawerLayout.closeDrawer(GravityCompat.END);
             }
             return true;
         });
 
         startDataFetch();
+    }
+
+    private void showFeedbackDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_feedback, null);
+        EditText feedbackEditText = dialogView.findViewById(R.id.feedbackEditText);
+        CheckBox includeDeviceInfoCheckbox = dialogView.findViewById(R.id.includeDeviceInfoCheckbox);
+        Button submitButton = dialogView.findViewById(R.id.submitFeedbackButton);
+        CheckBox showSubmissionInfoCheckbox = dialogView.findViewById(R.id.showSubmissionInfoCheckbox);
+        TextView textView = dialogView.findViewById(R.id.submissionInfoTextView);
+
+        textView.setVisibility(View.GONE);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .create();
+
+        Runnable updateSubmissionInfo = () -> {
+            if (showSubmissionInfoCheckbox.isChecked()) {
+                String message = feedbackEditText.getText().toString().trim();
+                Map<String, String> payload = new HashMap<>();
+                payload.put("message", message);
+                payload.put("user_key", feedbackKey != null ? feedbackKey : "");
+                if (includeDeviceInfoCheckbox.isChecked()) {
+                    payload.put("os_data", "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
+                    payload.put("device_data", Build.MANUFACTURER + " " + Build.MODEL);
+                }
+                StringBuilder sb = new StringBuilder();
+                sb.append("Message: ").append(payload.get("message")).append("\n");
+                sb.append("Device Info: ").append(payload.get("device_data") != null ? payload.get("device_data") : "").append("\n");
+                sb.append("OS Data: ").append(payload.get("os_data") != null ? payload.get("os_data") : "").append("\n");
+                textView.setText(sb.toString());
+                textView.setVisibility(View.VISIBLE);
+            } else {
+                textView.setVisibility(View.GONE);
+            }
+        };
+
+        showSubmissionInfoCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> updateSubmissionInfo.run());
+        includeDeviceInfoCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> updateSubmissionInfo.run());
+        feedbackEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                updateSubmissionInfo.run();
+            }
+        });
+        submitButton.setOnClickListener(v -> {
+            String message = feedbackEditText.getText().toString().trim();
+            if (message.isEmpty()) {
+                Toast.makeText(this, "Please enter your feedback.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Map<String, String> payload = new HashMap<>();
+            payload.put("message", message);
+            payload.put("user_key", feedbackKey != null ? feedbackKey : "");
+
+            if (includeDeviceInfoCheckbox.isChecked()) {
+                payload.put("os_data", "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
+                payload.put("device_data", Build.MANUFACTURER + " " + Build.MODEL);
+            } else {
+                payload.put("os_data", "");
+                payload.put("device_data", "");
+            }
+
+
+
+            submitButton.setEnabled(false);
+            submitButton.setText("Sending...");
+
+            new FetchData().sendFeedback(payload, new FetchData.OnFeedbackSentCallback() {
+                @Override
+                public void onSuccess() {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Feedback sent! Thank you.", Toast.LENGTH_LONG).show();
+                        dialog.dismiss();
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "Failed to send feedback. Please try again later.", Toast.LENGTH_LONG).show();
+                        submitButton.setEnabled(true);
+                        submitButton.setText("Submit Feedback");
+                    });
+                }
+            });
+        });
+
+        dialog.show();
     }
 
     private void showAudienceMenu() {
@@ -252,7 +353,9 @@ public class MainActivity extends AppCompatActivity {
                 if (eventAdapter != null) {
                     eventAdapter.setCategoryTypeAndAudienceData(category_type_and_audience_data);
                 }
-                
+
+                feedbackKey = data.optString("feedback_key", "");
+
                 setupCalendar();
                 applyFilters();
                 showContent();
